@@ -24,7 +24,7 @@ func NewPostController(service service.PostService) PostController {
 	return &controller{}
 }
 
-func (*controller) GetPosts(response http.ResponseWriter, req *http.Request) {
+func (c *controller) GetPosts(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-type", "application/json")
 	posts, err := postService.FindAll()
 
@@ -37,10 +37,10 @@ func (*controller) GetPosts(response http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(response).Encode(posts)
 }
 
-func (*controller) AddPost(response http.ResponseWriter, req *http.Request) {
+func (c *controller) AddPost(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-type", "application/json")
 	var post entity.Post
-	err := json.NewDecoder(req.Body).Decode(&post)
+	err := json.NewDecoder(request.Body).Decode(&post)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(errors.ServiceError{Message: "Error unmarshalling data"})
@@ -48,7 +48,7 @@ func (*controller) AddPost(response http.ResponseWriter, req *http.Request) {
 	}
 
 	err1 := postService.Validate(&post)
-	if err1 == nil {
+	if err1 != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(errors.ServiceError{Message: err1.Error()})
 

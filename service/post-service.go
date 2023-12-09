@@ -19,11 +19,11 @@ var (
 	repo repository.PostRepository
 )
 
-func NewPostService(repo repository.PostRepository) PostService {
-	repo = repo
+func NewPostService(newRepo repository.PostRepository) PostService {
+	repo = newRepo
 	return &service{}
 }
-func (*service) Validate(post *entity.Post) error {
+func (s *service) Validate(post *entity.Post) error {
 	if post == nil {
 		err := errors.New("The post is empty")
 		return err
@@ -38,10 +38,10 @@ func (*service) Validate(post *entity.Post) error {
 	}
 	return nil
 }
-func (*service) Create(post *entity.Post) (*entity.Post, error) {
+func (s *service) Create(post *entity.Post) (*entity.Post, error) {
 	post.ID = rand.Int()
 	return repo.Save(post)
 }
-func (*service) FindAll() ([]entity.Post, error) {
+func (s *service) FindAll() ([]entity.Post, error) {
 	return repo.FindAll()
 }
