@@ -48,7 +48,7 @@ func (c *controller) AddPost(response http.ResponseWriter, request *http.Request
 	}
 
 	err1 := postService.Validate(&post)
-	if err1 == nil {
+	if err1 != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(errors.ServiceError{Message: err1.Error()})
 
