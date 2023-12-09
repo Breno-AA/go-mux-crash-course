@@ -20,12 +20,12 @@ func NewFirestoreRepository(collectionName string) PostRepository {
 }
 
 const (
-	projectId string = "go-mux-crash-course-519d4"
+	projectID string = "go-mux-crash-course-519d4"
 )
 
 func (r *repo) Save(post *entity.Post) (*entity.Post, error) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, projectId)
+	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create a Firestore Client: %v", err)
 		return nil, err
@@ -47,14 +47,13 @@ func (r *repo) Save(post *entity.Post) (*entity.Post, error) {
 
 func (r *repo) FindAll() ([]entity.Post, error) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, projectId)
+	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create a Firestore Client: %v", err)
 		return nil, err
 	}
 
 	defer client.Close()
-
 	var posts []entity.Post = []entity.Post{}
 	it := client.Collection(r.CollectionName).Documents(ctx)
 	for {
@@ -67,7 +66,7 @@ func (r *repo) FindAll() ([]entity.Post, error) {
 			return nil, err
 		}
 		post := entity.Post{
-			ID:    doc.Data()["ID"].(int),
+			ID:    int(doc.Data()["ID"].(int64)),
 			Title: doc.Data()["Title"].(string),
 			Text:  doc.Data()["Text"].(string),
 		}
