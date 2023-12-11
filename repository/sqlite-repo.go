@@ -5,6 +5,8 @@ import (
 	"go-mux-crash-course/entity"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type sqliteRepo struct{}
@@ -55,4 +57,21 @@ func (sq *sqliteRepo) Save(post *entity.Post) (*entity.Post, error) {
 		log.Fatal(err)
 		return nil, err
 	}
+	return nil, nil
+}
+
+// TODO
+func (sq *sqliteRepo) Delete(post *entity.Post) error {
+	// NOT IMPLEMENTED
+	return nil
+}
+
+func (sq *sqliteRepo) FindAll() ([]entity.Post, error) {
+	// NOT IMPLEMENTED
+	return nil, nil
+}
+
+func (sq *sqliteRepo) FindByID(ID string) (*entity.Post, error) {
+	// NOT IMPLEMENTED
+	return nil, nil
 }
