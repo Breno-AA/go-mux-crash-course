@@ -74,3 +74,12 @@ func (r *repo) FindAll() ([]entity.Post, error) {
 	}
 	return posts, nil
 }
+
+func (r *repo) FindByID(ID string) (*entity.Post, error) {
+	// NOT IMPLEMENTED
+	return nil, nil
+}
+
+func (r *repo) Delete(post *entity.Post) error {
+	return nil
+}

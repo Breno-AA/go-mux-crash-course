@@ -2,25 +2,30 @@ package controller
 
 import (
 	"encoding/json"
+	"go-mux-crash-course/cache"
 	"go-mux-crash-course/entity"
 	"go-mux-crash-course/errors"
 	"go-mux-crash-course/service"
 	"net/http"
+	"strings"
 )
 
 type controller struct{}
 
 var (
 	postService service.PostService
+	postCache   cache.PostCache
 )
 
 type PostController interface {
 	GetPosts(response http.ResponseWriter, request *http.Request)
 	AddPost(response http.ResponseWriter, request *http.Request)
+	GetPostByID(response http.ResponseWriter, request *http.Request)
 }
 
-func NewPostController(service service.PostService) PostController {
+func NewPostController(service service.PostService, cache cache.PostCache) PostController {
 	postService = service
+	postCache = cache
 	return &controller{}
 }
 
@@ -64,4 +69,24 @@ func (c *controller) AddPost(response http.ResponseWriter, request *http.Request
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(result)
 
+}
+
+func (c *controller) GetPostByID(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-type", "application/json")
+	postID := strings.Split(request.URL.Path, "/")[2]
+	var post *entity.Post = postCache.Get(postID)
+	if post == nil {
+		post, err := postService.FindByID(postID)
+		if err != nil {
+			response.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(response).Encode(errors.ServiceError{Message: "No posts found!"})
+			return
+		}
+		postCache.Set(postID, post)
+		response.WriteHeader(http.StatusOK)
+		json.NewEncoder(response).Encode(post)
+	} else {
+		response.WriteHeader(http.StatusOK)
+		json.NewEncoder(response).Encode(post)
+	}
 }
