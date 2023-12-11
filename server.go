@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	PostRepository repository.PostRepository = repository.NewFirestoreRepository("posts")
+	PostRepository repository.PostRepository = repository.NewSQLiteRepository()
 	postService    service.PostService       = service.NewPostService(PostRepository)
 	postController controller.PostController = controller.NewPostController(postService)
 	httpRouter     router.Router             = router.NewMuxRouter()
