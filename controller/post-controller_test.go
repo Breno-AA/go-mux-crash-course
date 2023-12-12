@@ -121,5 +121,5 @@ func setup() {
 }
 
 func cleanUp(post *entity.Post) {
-	postRepo.Delete(post)
+	postRepo.Delete(string(post.ID))
 }
