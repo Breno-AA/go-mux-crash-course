@@ -80,6 +80,6 @@ func (r *repo) FindByID(ID string) (*entity.Post, error) {
 	return nil, nil
 }
 
-func (r *repo) Delete(post *entity.Post) error {
+func (r *repo) Delete(ID string) error {
 	return nil
 }

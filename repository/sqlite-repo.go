@@ -61,17 +61,71 @@ func (sq *sqliteRepo) Save(post *entity.Post) (*entity.Post, error) {
 }
 
 // TODO
-func (sq *sqliteRepo) Delete(post *entity.Post) error {
-	// NOT IMPLEMENTED
+func (sq *sqliteRepo) Delete(ID string) error {
+
+	db, err := sql.Open("sqlite3", "./posts")
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	db.QueryRow("DELETE FROM posts WHERE id = ?", ID)
+
 	return nil
 }
 
 func (sq *sqliteRepo) FindAll() ([]entity.Post, error) {
-	// NOT IMPLEMENTED
-	return nil, nil
+	db, err := sql.Open("sqlite3", "./posts")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	stmt, err := tx.Prepare("SELECT * FROM posts")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var posts []entity.Post
+
+	for rows.Next() {
+		var post entity.Post
+		rows.Scan(&post.ID, &post.Title, &post.Text)
+		posts = append(posts, post)
+	}
+
+	stmt.Close()
+
+	return posts, nil
 }
 
 func (sq *sqliteRepo) FindByID(ID string) (*entity.Post, error) {
-	// NOT IMPLEMENTED
-	return nil, nil
+
+	var post *entity.Post
+
+	db, err := sql.Open("sqlite3", "./posts")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	row := db.QueryRow("SELECT * FROM posts WHERE id = ?", ID)
+
+	if err := row.Scan(&post.ID, &post.Title, &post.Text); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return post, nil
 }
