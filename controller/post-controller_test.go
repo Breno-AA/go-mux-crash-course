@@ -1,41 +1,53 @@
-package controller
+package controller_test
 
 import (
-	"go-mux-crash-course/entity"
+	"bytes"
+	"go-mux-crash-course/controller"
 	"go-mux-crash-course/repository"
 	"go-mux-crash-course/service"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
-	postRepo       repository.PostRepository = repository.NewSQLiteRepository()
+	postRepo       repository.PostRepository = repository.NewMySQLRepository()
 	postSrv        service.PostService       = service.NewPostService(postRepo)
-	postController PostController            = NewPostController(postSrv)
+	postController controller.PostController = controller.NewPostController(postSrv)
 )
 
 func TestAddPost(t *testing.T) {
-	var json = []byte(`{"title": "Title 1", "text": "Text 1"}`)
-	http.NewRequest("POST", "/posts", byter.NewBuffer(json))
+	book := readTestData(t, "addPost.json")
+	bookReader := bytes.NewReader(book)
 
-	handler := http.HandlerFunc()
+	req := httptest.NewRequest(http.MethodPost, "/posts", bookReader)
+	w := httptest.NewRecorder()
+	postController.AddPost(w, req)
 
-	response := httptest.NewRecorder()
-
-	handler.ServeHTTP(response, req)
-
-	status := response.Code
-	if status != http.StatusOK {
-		t.Errorf("Handler return a wrong status code: got %v want %v", status, http.StatusOK)
-
-		var post entity.Post
-		json.NewDecoder(io.Reader(response.Body)).Decode(&)
-
-		assert.NotNil(t,post.ID)
-	}
+	res := w.Result()
+	defer res.Body.Close()
+	assert.Equal(t, 200, res.StatusCode)
 }
 
 func TestGetPosts(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/posts", nil)
+	w := httptest.NewRecorder()
+	postController.GetPosts(w, req)
 
+	res := w.Result()
+	defer res.Body.Close()
+	assert.Equal(t, 200, res.StatusCode)
+}
+
+func readTestData(t *testing.T, name string) []byte {
+	t.Helper()
+	content, err := os.ReadFile("../" + name)
+	if err != nil {
+		t.Errorf("Could not read %v", name)
+	}
+
+	return content
 }
