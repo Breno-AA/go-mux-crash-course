@@ -5,6 +5,8 @@ import (
 	"go-mux-crash-course/entity"
 	"log"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type sqliteRepo struct{}
@@ -50,9 +52,53 @@ func (sq *sqliteRepo) Save(post *entity.Post) (*entity.Post, error) {
 	}
 
 	defer stmt.Close()
+
 	_, err = stmt.Exec(post.ID, post.Title, post.Text)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func (sq *sqliteRepo) FindAll() ([]entity.Post, error) {
+	db, err := sql.Open("sqlite3", "./posts.db")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT id, title, txt FROM posts")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []entity.Post
+
+	for rows.Next() {
+		var post entity.Post
+		err := rows.Scan(&post.ID, &post.Title, &post.Text)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return posts, nil
 }
