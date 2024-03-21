@@ -4,26 +4,20 @@ import (
 	"database/sql"
 	"go-mux-crash-course/entity"
 	"log"
-	"os"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type sqliteRepo struct{}
 
 func NewSQLiteRepository() PostRepository {
-	os.Remove("./posts.db")
-
-	db, err := sql.Open("sqlite3", "./posts.db")
+	db, err := sql.Open("sqlite", "./posts.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	sqlStmt := `
-	CREATE TABLE posts (id INTEGER NOT NULL PRIMARY KEY, title TEXT, txt TEXT);
-	DELETE FROM posts
-	`
+	sqlStmt := `CREATE TABLE IF NOT EXISTS posts (id INTEGER NOT NULL PRIMARY KEY, title TEXT, txt TEXT)`
 
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
@@ -32,100 +26,76 @@ func NewSQLiteRepository() PostRepository {
 	return &sqliteRepo{}
 }
 
-func (sq *sqliteRepo) Save(post *entity.Post) (*entity.Post, error) {
-	db, err := sql.Open("sqlite3", "./posts.db")
+func (sq *sqliteRepo) Save(post *entity.Post) (id int64, err error) {
+	db, err := sql.Open("sqlite", "./posts.db")
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
+	defer db.Close()
 
-	tx, err := db.Begin()
+	stmt, err := db.Prepare("INSERT INTO posts(id, title, txt) VALUES(?, ?, ?)")
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
-
-	stmt, err := tx.Prepare("INSERT INTO posts(id, title, txt) VALUES(?, ?, ?)")
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
 	defer stmt.Close()
-	_, err = stmt.Exec(post.ID, post.Title, post.Text)
+
+	result, err := stmt.Exec(post.ID, post.Title, post.Text)
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
-	return nil, nil
+	return result.LastInsertId()
 }
 
 // TODO
-func (sq *sqliteRepo) Delete(ID string) error {
-
-	db, err := sql.Open("sqlite3", "./posts")
+func (sq *sqliteRepo) Delete(ID string) (err error) {
+	db, err := sql.Open("sqlite", "./posts.db")
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
+	defer db.Close()
 
 	db.QueryRow("DELETE FROM posts WHERE id = ?", ID)
-
-	return nil
+	return
 }
 
-func (sq *sqliteRepo) FindAll() ([]entity.Post, error) {
-	db, err := sql.Open("sqlite3", "./posts")
+func (sq *sqliteRepo) FindAll() (posts []entity.Post, err error) {
+	db, err := sql.Open("sqlite", "./posts.db")
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
+	defer db.Close()
 
-	tx, err := db.Begin()
+	rows, err := db.Query("SELECT * FROM posts")
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
-
-	stmt, err := tx.Prepare("SELECT * FROM posts")
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	rows, err := stmt.Query()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var posts []entity.Post
 
 	for rows.Next() {
 		var post entity.Post
 		rows.Scan(&post.ID, &post.Title, &post.Text)
 		posts = append(posts, post)
 	}
-
-	stmt.Close()
-
-	return posts, nil
+	return
 }
 
-func (sq *sqliteRepo) FindByID(ID string) (*entity.Post, error) {
-
-	var post *entity.Post
-
-	db, err := sql.Open("sqlite3", "./posts")
+func (sq *sqliteRepo) FindByID(ID string) (post entity.Post, err error) {
+	db, err := sql.Open("sqlite", "./posts.db")
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
+	defer db.Close()
 
-	row := db.QueryRow("SELECT * FROM posts WHERE id = ?", ID)
-
-	if err := row.Scan(&post.ID, &post.Title, &post.Text); err != nil {
+	err = db.QueryRow("SELECT * FROM posts WHERE id = ?", ID).Scan(&post.ID, &post.Title, &post.Text)
+	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return
 	}
-
-	return post, nil
+	return
 }

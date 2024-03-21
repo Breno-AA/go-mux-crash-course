@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"go-mux-crash-course/cache"
 	"go-mux-crash-course/entity"
 	"go-mux-crash-course/repository"
@@ -30,47 +31,37 @@ var (
 )
 
 func TestAddPost(t *testing.T) {
-	var jsonReq = []byte(`{"title": "` + TITLE + `", "text": "` + TEXT + `"}`)
-	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonReq))
-
 	handler := http.HandlerFunc(postController.AddPost)
 
+	var jsonReq = []byte(`{"title": "` + TITLE + `", "text": "` + TEXT + `"}`)
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonReq))
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, req)
 
-	status := response.Code
-
-	if status != http.StatusOK {
-		t.Errorf("Handler return a wrong status code: got %v want %v", status, http.StatusOK)
+	if response.Code != http.StatusOK {
+		t.Errorf("Handler return a wrong status code: got %v want %v", response.Code, http.StatusOK)
 	}
 
-	var posts []entity.Post
-	json.NewDecoder(io.Reader(response.Body)).Decode(&posts)
+	var postID int64
+	json.NewDecoder(io.Reader(response.Body)).Decode(&postID)
+	assert.NotNil(t, postID)
 
-	assert.NotNil(t, posts[0].ID)
-	assert.Equal(t, TITLE, posts[0].Title)
-	assert.Equal(t, TEXT, posts[0].Text)
-
-	cleanUp(&posts[0])
-
+	cleanUp(postID)
 }
 
 func TestGetPosts(t *testing.T) {
-
 	setup()
-
-	req, _ := http.NewRequest("GET", "/posts", nil)
 
 	handler := http.HandlerFunc(postController.GetPosts)
 
+	req, _ := http.NewRequest("GET", "/posts", nil)
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, req)
 
-	status := response.Code
-	if status != http.StatusOK {
-		t.Errorf("Handler return a wrong status code: got %v want %v", status, http.StatusOK)
+	if response.Code != http.StatusOK {
+		t.Errorf("Handler return a wrong status code: got %v want %v", response.Code, http.StatusOK)
 	}
 
 	var posts []entity.Post
@@ -80,24 +71,20 @@ func TestGetPosts(t *testing.T) {
 	assert.Equal(t, TITLE, posts[0].Title)
 	assert.Equal(t, TEXT, posts[0].Text)
 
-	cleanUp(&posts[0])
+	cleanUp(posts[0].ID)
 }
 
 func TestGetPostByID(t *testing.T) {
-
 	setup()
 
-	req, _ := http.NewRequest("GET", "/posts/"+strconv.FormatInt(ID, 10), nil)
-
 	handler := http.HandlerFunc(postController.GetPostByID)
-
+	req, _ := http.NewRequest("GET", "/posts/"+strconv.FormatInt(ID, 10), nil)
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, req)
 
-	status := response.Code
-	if status != http.StatusOK {
-		t.Errorf("Handler return a wrong status code: got %v want %v", status, http.StatusOK)
+	if response.Code != http.StatusOK {
+		t.Errorf("Handler return a wrong status code: got %v want %v", response.Code, http.StatusOK)
 	}
 
 	var post entity.Post
@@ -107,19 +94,18 @@ func TestGetPostByID(t *testing.T) {
 	assert.Equal(t, TITLE, post.Title)
 	assert.Equal(t, TEXT, post.Text)
 
-	cleanUp(&post)
+	cleanUp(post.ID)
 }
 
 func setup() {
 	var post entity.Post = entity.Post{
-		ID:    int(ID),
+		ID:    ID,
 		Title: TITLE,
 		Text:  TEXT,
 	}
-
 	postRepo.Save(&post)
 }
 
-func cleanUp(post *entity.Post) {
-	postRepo.Delete(string(post.ID))
+func cleanUp(post int64) {
+	postRepo.Delete(fmt.Sprint(post))
 }

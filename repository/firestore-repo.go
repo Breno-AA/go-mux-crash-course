@@ -23,12 +23,12 @@ const (
 	projectID string = "go-mux-crash-course-519d4"
 )
 
-func (r *repo) Save(post *entity.Post) (*entity.Post, error) {
+func (r *repo) Save(post *entity.Post) (ID int64, err error) {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create a Firestore Client: %v", err)
-		return nil, err
+		return
 	}
 
 	_, _, err = client.Collection(r.CollectionName).Add(ctx, map[string]interface{}{
@@ -40,21 +40,20 @@ func (r *repo) Save(post *entity.Post) (*entity.Post, error) {
 	defer client.Close()
 	if err != nil {
 		log.Fatalf("Failed adding a new post: %v", err)
-		return nil, err
+		return
 	}
-	return post, nil
+	return
 }
 
-func (r *repo) FindAll() ([]entity.Post, error) {
+func (r *repo) FindAll() (posts []entity.Post, err error) {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create a Firestore Client: %v", err)
-		return nil, err
+		return
 	}
 
 	defer client.Close()
-	var posts []entity.Post = []entity.Post{}
 	it := client.Collection(r.CollectionName).Documents(ctx)
 	for {
 		doc, err := it.Next()
@@ -66,20 +65,20 @@ func (r *repo) FindAll() ([]entity.Post, error) {
 			return nil, err
 		}
 		post := entity.Post{
-			ID:    int(doc.Data()["ID"].(int64)),
+			ID:    doc.Data()["ID"].(int64),
 			Title: doc.Data()["Title"].(string),
 			Text:  doc.Data()["Text"].(string),
 		}
 		posts = append(posts, post)
 	}
-	return posts, nil
+	return
 }
 
-func (r *repo) FindByID(ID string) (*entity.Post, error) {
+func (r *repo) FindByID(ID string) (post entity.Post, err error) {
 	// NOT IMPLEMENTED
-	return nil, nil
+	return
 }
 
-func (r *repo) Delete(ID string) error {
-	return nil
+func (r *repo) Delete(ID string) (err error) {
+	return
 }

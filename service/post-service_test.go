@@ -12,10 +12,10 @@ type MockRepository struct {
 	mock.Mock
 }
 
-func (mock *MockRepository) Save(post *entity.Post) (*entity.Post, error) {
+func (mock *MockRepository) Save(post *entity.Post) (int64, error) {
 	args := mock.Called()
 	result := args.Get(0)
-	return result.(*entity.Post), args.Error(1)
+	return result.(int64), args.Error(1)
 }
 
 func (mock *MockRepository) FindAll() ([]entity.Post, error) {
@@ -29,15 +29,15 @@ func (mock *MockRepository) Delete(ID string) error {
 	return args.Error(1)
 }
 
-func (mock *MockRepository) FindByID(ID string) (*entity.Post, error) {
+func (mock *MockRepository) FindByID(ID string) (entity.Post, error) {
 	args := mock.Called()
 	result := args.Get(0)
-	return result.(*entity.Post), args.Error(1)
+	return result.(entity.Post), args.Error(1)
 }
 func TestFindAll(t *testing.T) {
 	mockRepo := new(MockRepository)
 
-	identifier := 1
+	var identifier int64 = 1
 
 	post := entity.Post{ID: identifier, Title: "A", Text: "B"}
 
@@ -65,9 +65,9 @@ func TestCreate(t *testing.T) {
 
 	mockRepo.AssertExpectations(t)
 
-	assert.NotNil(t, result.ID)
-	assert.Equal(t, "A", result.ID)
-	assert.Equal(t, "B", result.ID)
+	assert.NotNil(t, result)
+	assert.Equal(t, "A", result)
+	assert.Equal(t, "B", result)
 	assert.Nil(t, err)
 }
 
